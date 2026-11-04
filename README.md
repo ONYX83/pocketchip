@@ -1,22 +1,20 @@
-# PocketChip v0.3 — Project Vault
+# PocketChip v0.4 — Arcade Performance
 
-A playful four-track mobile-first 8-bit loop synthesizer.
+A mobile-first 8-bit loop synthesizer with four tracks, scale-locked notes and project backups.
 
-## Features
-- Lead, Bass, Arp and Drums 16-step tracks
-- Note editor, scale lock, root note, waveforms, tempo and randomization
-- Browser-local autosave with a last-valid-project fallback
-- **Export JSON**: download a portable backup of your current loop
-- **Import JSON**: validate the backup, preview its name and confirm before replacing the current loop
-- Imported loops retain their notes, beats, tempo, scale, root and waveform choices
+## New in v0.4
+- Animated arcade pixel-bar visualizer, with reduced-motion support and on/off toggle
+- Per-track volume, note length and crunch controls
+- Mutate: make 2–4 small edits to the selected track
+- Undo: restore up to 20 recent edits during the current session
+- Compatible with v0.3 JSON exports and local autosaves (optional controls default when missing)
 
-## Safety and storage
+## Existing features
+- Lead, Bass, Arp and Drums; 16-step patterns
+- Root notes, scales, waveforms, tempo, randomization
+- Project Vault JSON export/import and browser-local autosave
 
-Exports use a versioned `pocketchip-project` envelope containing the v0.2 music schema. Import only accepts this format, validates project structure and limits files to 256 KB. Import does not overwrite the current project until you explicitly confirm. Autosave uses the existing `pocketchip-v02-project` key to preserve v0.2 work. A fallback backup is kept locally, but **downloaded JSON is the durable backup**: clearing browser data can remove all local copies. Browser downloads on mobile may ask for permission or appear in Downloads.
-
-## Run locally
-
-Node.js 22 or later:
+## Build
 
 ```sh
 npm install
@@ -24,19 +22,19 @@ npm run build
 npm run dev
 ```
 
-## Deploy
+## v0.4 phone acceptance tests
+1. App opens, existing saved v0.3 project survives and all four tracks play.
+2. Pixel visualizer animates during playback and can be toggled off/on.
+3. Volume slider changes only selected track and zero mutes it.
+4. Note length changes audible duration of selected track.
+5. Crunch changes selected track sound.
+6. Mutate makes small changes to selected track, preserving other tracks.
+7. Undo restores changes; button disables when history is empty.
+8. Sound controls persist after refresh and survive JSON export/import.
+9. Old v0.3 JSON imports successfully with default sound controls.
+10. Mobile layout has no horizontal overflow; reduced-motion preference disables visualizer animation.
 
-GitHub Pages: https://onyx83.github.io/pocketchip/ — Settings → Pages → Source: GitHub Actions.
+## Notes
+Visualizer is a beat-synchronized decorative animation, not a frequency-spectrum analyzer. Undo history is session-only and not exported. Export a JSON backup before testing imports. Local storage is browser-specific.
 
-## v0.3 acceptance tests
-
-1. Existing v0.2 loop is still present after upgrade.
-2. Project Vault displays project name, Export JSON and Import JSON.
-3. Export downloads a valid `.json` file.
-4. Change notes, beats and tempo, then import the exported file; confirm original settings return.
-5. Cancel import: current loop remains unchanged.
-6. Invalid JSON and non-PocketChip JSON are rejected without replacing the loop.
-7. Reload the page: edited or imported project persists.
-8. All four tracks play and controls remain mobile-friendly.
-9. Verify exported file is visible in Downloads or your browser's download manager.
-
+Deployed through GitHub Actions to https://onyx83.github.io/pocketchip/.
