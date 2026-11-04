@@ -1,17 +1,22 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {ChipEngine,makeProject,isProject,randomizeTrack,SCALE_INTERVALS,midiFor,type Project,type Wave} from './audio';
+import {ChipEngine,randomizeTrack,SCALE_INTERVALS,midiFor,type Project,type Wave} from './audio';
+import {readProject,persistProject,downloadProject,parseImport} from './storage';
 import './style.css';
 const LABELS=['LEAD','BASS','ARP','DRUMS'],ICONS=['◆','●','✦','▣'],COLORS=['#ffc857','#ff75a0','#8de5ff','#a6ed83'];
 const NOTES=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-const KEY='pocketchip-v02-project';
-function load():Project{try{const data=JSON.parse(localStorage.getItem(KEY)||'null');if(isProject(data))return data;}catch{}return makeProject();}
 function App(){
  const engine=useRef<ChipEngine|null>(null);if(!engine.current)engine.current=new ChipEngine();
- const [project,setProject]=useState<Project>(load),[selected,setSelected]=useState(0),[step,setStep]=useState(-1),[playing,setPlaying]=useState(false),[mode,setMode]=useState<'beats'|'notes'>('beats'),[error,setError]=useState(''),[saved,setSaved]=useState(true);
+ const [project,setProject]=useState<Project>(readProject),[selected,setSelected]=useState(0),[step,setStep]=useState(-1),[playing,setPlaying]=useState(false),[mode,setMode]=useState<'beats'|'notes'>('beats'),[error,setError]=useState(''),[saved,setSaved]=useState(true);
  const [editStep,setEditStep]=useState(0);
- useEffect(()=>{engine.current?.setProject(project);setSaved(false);const id=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(project));setSaved(true);}catch{setError('Autosave unavailable: check browser storage settings.')}},300);return()=>clearTimeout(id)},[project]);
+ const [projectName,setProjectName]=useState('My Loop');
+ const [notice,setNotice]=useState('');
+ const [importPending,setImportPending]=useState<{name:string;project:Project}|null>(null);
+ const fileInput=useRef<HTMLInputElement|null>(null);
+ useEffect(()=>{engine.current?.setProject(project);setSaved(false);const id=setTimeout(()=>{try{persistProject(project);setSaved(true);}catch{setError('Autosave unavailable: check browser storage settings.')}},300);return()=>clearTimeout(id)},[project]);
  useEffect(()=>()=>engine.current?.stop(),[]);
+ async function readFile(file:File|undefined){if(!file)return;setNotice('');try{if(file.size>256*1024)throw new Error('File is too large (maximum 256 KB).');const parsed=parseImport(await file.text());setImportPending(parsed);}catch(e){setNotice(e instanceof Error?e.message:'Could not open file.');}finally{if(fileInput.current)fileInput.current.value='';}}
+ function confirmImport(){if(!importPending)return;engine.current?.stop();setPlaying(false);setStep(-1);setProject(importPending.project);setProjectName(importPending.name);setSelected(0);setEditStep(0);setImportPending(null);setNotice('Project imported. Autosave will keep your changes.');}
  function change(fn:(p:Project)=>void){setProject(p=>{const next=structuredClone(p);fn(next);return next})}
  async function play(){if(playing){engine.current?.stop();setPlaying(false);return;}try{await engine.current!.start(setStep);setPlaying(true);setError('')}catch{setError('Audio could not start. Tap Play again.')}}
  const degrees=SCALE_INTERVALS[project.scale];
@@ -29,6 +34,7 @@ function App(){
  <section className="panel"><div className="section-title"><span>02 / MELODY SETTINGS</span><span>♪ SCALE LOCK</span></div><div className="setting-grid"><label>ROOT NOTE<select value={project.root} onChange={e=>change(p=>{p.root=Number(e.target.value)})}>{NOTES.map((n,i)=><option key={i} value={i}>{n}</option>)}</select></label><label>SCALE<select value={project.scale} onChange={e=>change(p=>{p.scale=e.target.value as Project['scale'];p.tracks.forEach((row,t)=>{if(t!==3)row.forEach(s=>s.degree=Math.min(s.degree,SCALE_INTERVALS[p.scale].length*2-1))})})}><option value="minor">MINOR</option><option value="major">MAJOR</option><option value="pentatonic">PENTATONIC</option></select></label></div></section>
  <section className="panel"><div className="section-title"><span>03 / CHIP SOUNDS</span><span>PRESETS</span></div><div className="wave-options">{(selected===3?['noise']:['square','pulse','triangle'] as Wave[]).map(w=><button key={w} className={project.waves[selected]===w?'chosen':''} onClick={()=>change(p=>{p.waves[selected]=w as Wave})}>{w.toUpperCase()}</button>)}</div><p className="hint">Try Pulse Lead, Square Bass, Triangle Arp and Noise Drums.</p></section>
  <section className="panel"><div className="section-title"><span>04 / SPEED CONTROL</span><span>{project.bpm} BPM</span></div><input aria-label="Tempo" type="range" min="60" max="200" step="5" value={project.bpm} onChange={e=>change(p=>{p.bpm=Number(e.target.value)})}/><div className="tempo-labels"><span>CHILL · 60</span><span>200 · TURBO</span></div></section>
- <footer>POCKETCHIP v0.2 <span>★</span> {saved?'AUTOSAVED ✓':'SAVING…'}</footer></main>;
+ <section className="panel"><div className="section-title"><span>05 / PROJECT VAULT</span><span>LOCAL + JSON BACKUP</span></div><label className="vault-label">PROJECT NAME<input aria-label="Project name" className="project-name" maxLength={60} value={projectName} onChange={e=>setProjectName(e.target.value)}/></label><p className="hint">Your loop is autosaved in this browser. Export a JSON backup to keep a separate copy.</p><div className="vault-actions"><button className="play" onClick={()=>{try{downloadProject(project,projectName);setNotice('Backup download requested. Check your Downloads folder.')}catch(e){setNotice(e instanceof Error?e.message:'Export failed.')}}}>↓ EXPORT JSON</button><button className="secondary" onClick={()=>fileInput.current?.click()}>↑ IMPORT JSON</button></div><input ref={fileInput} className="hidden-file" type="file" accept=".json,application/json" aria-label="Select PocketChip project JSON" onChange={e=>{void readFile(e.target.files?.[0])}}/>{importPending&&<div className="import-confirm" role="group" aria-label="Confirm project import"><p>Replace the current loop with <strong>{importPending.name}</strong>? Export your current loop first if you want to keep it.</p><div className="vault-actions"><button className="play" onClick={confirmImport}>REPLACE LOOP</button><button className="secondary" onClick={()=>setImportPending(null)}>CANCEL</button></div></div>}{notice&&<p className="hint" role="status">{notice}</p>}</section>
+ <footer>POCKETCHIP v0.3 <span>★</span> {saved?'AUTOSAVED ✓':'SAVING…'}</footer></main>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
