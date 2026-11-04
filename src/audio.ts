@@ -16,7 +16,7 @@ export function isProject(value:unknown):value is Project {
 export function randomizeTrack(p:Project,t:number):Project {
  const next=structuredClone(p);
  const degrees=SCALE_INTERVALS[p.scale].length;
- next.tracks[t]=next.tracks[t].map((s,i)=>({on:t===3?(i%4===0||Math.random()<0.38):t===2?(Math.random()<0.72):(i%4===0||Math.random()<0.32),degree:t===3?Math.floor(Math.random()*3):Math.floor(Math.random()*(degrees+1))}));
+ next.tracks[t]=next.tracks[t].map((_,i)=>({on:t===3?(i%4===0||Math.random()<0.38):t===2?(Math.random()<0.72):(i%4===0||Math.random()<0.32),degree:t===3?Math.floor(Math.random()*3):Math.floor(Math.random()*(degrees+1))}));
  return next;
 }
 export function midiFor(p:Project,track:number,degree:number){
