@@ -1,47 +1,42 @@
-# PocketChip v0.1
+# PocketChip v0.2 — Melody Maker
 
-A playful mobile-first 8-bit loop synthesizer with an arcade-inspired interface.
+Mobile-first 8-bit loop synthesizer, hosted with GitHub Pages.
 
 ## Features
+- Four 16-step tracks: Lead, Bass, Arp, Drums
+- Beat editor and scale-locked note editor (tap a step, then choose pitch)
+- Root note and major, minor, pentatonic scales
+- Square, pulse and triangle melodic waveforms, synthesized noise percussion (kick/snare/hat)
+- Track randomization, tempo 60–200 BPM, Play/Stop
+- Automatic local browser saving (no account required)
 
-- Two editable 16-step tracks (Lead and Bass)
-- Square and pulse oscillator sounds generated with the Web Audio API
-- Play/Stop, tempo control (60–200 BPM), Clear and Mix It!
-- Responsive touch interface
-- GitHub Pages deployment workflow
+## Development
 
-## Run locally
+Requires Node.js 22 or later.
 
-Node.js 22 or later:
-
-```bash
+```sh
 npm install
+npm run build
 npm run dev
 ```
 
-For a production build:
+## Deployment
 
-```bash
-npm run build
-npm run preview
-```
+Settings → Pages → Source: GitHub Actions. Pushes to main deploy through `.github/workflows/deploy.yml`.
 
-## Deploy
+Live site after successful workflow: https://onyx83.github.io/pocketchip/
 
-In GitHub Settings → Pages, choose **GitHub Actions** as the build and deployment source. A push to `main` triggers the workflow.
+## v0.2 phone acceptance tests
 
-After successful deployment: https://onyx83.github.io/pocketchip/
+1. App opens and four tracks are visible.
+2. Lead and Bass retain independent 16-step patterns.
+3. Arp plays notes and Drums produces percussive sounds.
+4. Notes mode selects a step and edits pitch; note changes are audible.
+5. Root and scale changes alter melodic pitch while preserving scale lock.
+6. Square/Pulse/Triangle sound choices work.
+7. Mix It! changes only the selected track.
+8. BPM changes playback speed and Stop silences playback.
+9. Refresh restores edited patterns, BPM, root, scale and waveforms.
+10. Controls fit a narrow mobile screen without horizontal scrolling.
 
-## Current limitations
-
-v0.1 is an initial playable prototype, not cycle-accurate 8-bit hardware emulation. Audio starts on a user gesture. Step audio scheduling uses the audio clock; visual updates use JavaScript timers. Saving, note editing and offline support are planned for later milestones.
-
-## Roadmap
-
-v0.2: More tracks, note editor, noise drums, scales.
-
-v0.3: Visualizer, effects, mutation and undo.
-
-v0.4: Save, import/export and WAV export.
-
-v1.0: Installable PWA, offline support and mobile compatibility testing.
+**Note:** Browser-local storage is device/browser specific. Clearing site data will remove saved patterns. Existing v0.1 patterns are not migrated.
